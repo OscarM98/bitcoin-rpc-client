@@ -797,6 +797,36 @@ public class BitcoinJSONRPCClient implements BitcoindRpcClient {
   }
 
   @Override
+  public void setLabel(String address, String label) throws GenericRpcException
+  {
+    query("setlabel", address, label);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public List<LabeledAddress> getAddressesByLabel(String label) throws GenericRpcException
+  {
+    Map<String, Map<String, ?>> map = (Map<String, Map<String, ?>>) query("getaddressesbylabel", label);
+    List<LabeledAddress> list = new ArrayList<>(map.size());
+    for (Map.Entry<String, Map<String, ?>> kv : map.entrySet()) {
+      list.add(new LabeledAddressWrapper(label, kv.getKey(), (String)kv.getValue().get("purpose")));
+    }
+    return list;
+  }
+
+  @Override
+  public BigDecimal getReceivedByLabel(String label) throws GenericRpcException
+  {
+    return (BigDecimal) query("getreceivedbylabel", label);
+  }
+
+  @Override
+  public BigDecimal getReceivedByLabel(String label, int minConf) throws GenericRpcException
+  {
+    return (BigDecimal) query("getreceivedbylabel", label, minConf);
+  }
+
+  @Override
   public String sendFrom(String fromAccount, String toAddress, BigDecimal amount) throws GenericRpcException {
     return (String) query("sendfrom", fromAccount, toAddress, amount);
   }
@@ -2987,6 +3017,37 @@ public class BitcoinJSONRPCClient implements BitcoindRpcClient {
       }
     }
 
+    private class LabeledAddressWrapper implements LabeledAddress, Serializable
+    {
+      private final String label;
+      private final String address;
+      private final String purpose;
+
+      public LabeledAddressWrapper(String label, String address, String purpose)
+      {
+        this.label = label;
+        this.address = address;
+        this.purpose = purpose;
+      }
+
+      @Override
+      public String label()
+      {
+        return label;
+      }
+
+      @Override
+      public String address()
+      {
+        return address;
+      }
+
+      @Override
+      public String purpose()
+      {
+        return purpose;
+      }
+    }
 
 	@SuppressWarnings("serial")
 	private class UnspentTxOutputWrapper extends MapWrapper implements UnspentTxOutput, Serializable {

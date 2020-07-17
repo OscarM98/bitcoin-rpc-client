@@ -1,22 +1,14 @@
 package wf.bitcoin.javabitcoindrpcclient.integration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
+import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
+import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient.*;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.junit.Test;
-
-import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient.AddressInfo;
-import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient.AddressValidationResult;
-import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient.MultiSig;
-import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient.Transaction;
-import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient.TransactionsSinceBlock;
-import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient.TxInput;
-import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient.Unspent;
+import static org.junit.Assert.*;
 
 /**
  * Integration tests for the Wallet command group
@@ -153,7 +145,49 @@ public class WalletTest extends IntegrationTestBase
 		assertTrue(receivedTxIDs.contains(tx1ID));
 		assertTrue(receivedTxIDs.contains(tx2ID));
 	}
-	
+
+	@Test(expected = Test.None.class)
+	public void setLabelAndGetAddressByLabelTest()
+	{
+		String label1 = "Label1";
+		String label2 = "Label2";
+
+		String address1 = client.getNewAddress();
+		String address2 = client.getNewAddress();
+
+		client.setLabel(address1, label1);
+		client.setLabel(address2, label2);
+
+		List<BitcoindRpcClient.LabeledAddress> labeledAddressList1 = client.getAddressesByLabel(label1);
+		List<BitcoindRpcClient.LabeledAddress> labeledAddressList2 = client.getAddressesByLabel(label2);
+
+		assertFalse(labeledAddressList1.isEmpty());
+		assertFalse(labeledAddressList2.isEmpty());
+
+		int l1Count = 0;
+		for (BitcoindRpcClient.LabeledAddress la : labeledAddressList1) {
+			assertEquals(label1, la.label());
+			assertNotNull(la.address());
+			if (la.address().equals(address1)) {
+				assertEquals(la.purpose(), "receive");
+				++l1Count;
+			}
+		}
+
+		int l2Count = 0;
+		for (BitcoindRpcClient.LabeledAddress la : labeledAddressList2) {
+			assertEquals(label2, la.label());
+			assertNotNull(la.address());
+			if (la.address().equals(address2)) {
+				assertEquals(la.purpose(), "receive");
+				++l2Count;
+			}
+		}
+
+		assertEquals(1, l1Count);
+		assertEquals(1, l2Count);
+	}
+
 	@Test(expected = Test.None.class) // no exception expected
 	public void listSinceBlockTestIncludeWatchOnly()
 	{

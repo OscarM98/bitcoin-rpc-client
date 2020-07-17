@@ -1119,6 +1119,36 @@ public interface BitcoindRpcClient {
   */
  boolean move(String fromAccount, String toAccount, BigDecimal amount, int minConf, String comment) throws GenericRpcException;
 
+  /**
+   * Sets the label associated with the given address
+   * @see <a href="https://developer.bitcoin.org/reference/rpc/setlabel.html">setlabel</a>
+   * @param address The bitcoin address to be associated with a label
+   * @param label The label to assign to the address
+   */
+ void setLabel(String address, String label) throws GenericRpcException;
+
+  /**
+   * Returns the list of addresses assigned the specified label.
+   * @see <a href="https://developer.bitcoin.org/reference/rpc/getaddressesbylabel.html">getaddressesbylabel</a>
+   * @param label The label
+   */
+ List<LabeledAddress> getAddressesByLabel(String label) throws GenericRpcException;
+
+  /**
+   * Returns the total amount received by addresses with <label> in transactions with at least 1 confirmation.
+   * @see <a href="https://developer.bitcoin.org/reference/rpc/getreceivedbylabel.html">getreceivedbylabel</a>
+   * @param label The selected label, may be the default label using “”.
+   */
+ BigDecimal getReceivedByLabel(String label) throws GenericRpcException;
+
+  /**
+   * Returns the total amount received by addresses with <label> in transactions with at least {@code minConf} confirmation.
+   * @see <a href="https://developer.bitcoin.org/reference/rpc/getreceivedbylabel.html">getreceivedbylabel</a>
+   * @param label The selected label, may be the default label using “”.
+   * @param minConf Only include transactions confirmed at least this many times.
+   */
+ BigDecimal getReceivedByLabel(String label, int minConf) throws GenericRpcException;
+
 
  /**
   * The sendfrom RPC spends an amount from a local account to a bitcoin address.
@@ -1643,6 +1673,13 @@ public interface BitcoindRpcClient {
 		
 		String purpose();
 	}
+
+  static interface LabeledAddress extends Serializable
+  {
+    String label();
+    String address();
+    String purpose();
+  }
 
  static interface DecodedScript extends MapWrapperType, Serializable {
 
