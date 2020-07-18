@@ -25,6 +25,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -53,7 +54,45 @@ public interface BitcoindRpcClient {
    * scantxoutset <action> ( <scanobjects> )
    * verifytxoutproof "proof"
    */
-  
+
+  /**
+   * Creates and loads a new wallet.
+   * @see <a href="https://developer.bitcoin.org/reference/rpc/createwallet.html">createwallet</a>
+   */
+  void createWallet(String walletFilename) throws GenericRpcException;
+
+  /**
+   * Loads a wallet from a wallet file or directory.
+   * @see <a href="https://developer.bitcoin.org/reference/rpc/loadwallet.html">loadwallet</a>
+   */
+  void loadWallet(String walletFilename) throws GenericRpcException;
+
+  /**
+   * Unloads the wallet referenced by the request endpoint otherwise unloads the wallet specified in the argument.
+   * Specifying the wallet name on a wallet endpoint is invalid.
+   * @see <a href="https://developer.bitcoin.org/reference/rpc/unloadwallet.html">unloadwallet</a>
+   */
+  void unloadWallet(String walletFilename) throws GenericRpcException;
+
+  /**
+   * Returns a list of currently loaded wallets.
+   * @see <a href="https://developer.bitcoin.org/reference/rpc/listwallets.html">listwallets</a>
+   */
+  Set<String> listWallets() throws GenericRpcException;
+
+  /**
+   * Returns a list of wallets in the wallet directory.
+   * @see <a href="https://developer.bitcoin.org/reference/rpc/listwalletdir.html">listwalletdir</a>
+   */
+  Set<String> listWalletDir() throws GenericRpcException;
+
+  /**
+   * Creates a new instance for which all calls will be executed in the context of the specified wallet.
+   * i.e. all RPC calls for the returned instance will be sent to $BASEURL/wallet/$walletFilename
+   * @see <a href="https://en.bitcoin.it/wiki/API_reference_(JSON-RPC)#Multi-wallet_RPC_calls">Multi-wallet RPC calls</a>
+   */
+  BitcoindRpcClient forWallet(String walletFilename) throws GenericRpcException;
+
   /**
    * The getbestblockhash RPC returns the header hash of the most recent block on the best block chain.
    * 

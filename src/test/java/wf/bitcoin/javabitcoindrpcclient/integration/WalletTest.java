@@ -1,11 +1,16 @@
 package wf.bitcoin.javabitcoindrpcclient.integration;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
 import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
 import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient.*;
+import wf.bitcoin.javabitcoindrpcclient.GenericRpcException;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
@@ -186,6 +191,99 @@ public class WalletTest extends IntegrationTestBase
 
 		assertEquals(1, l1Count);
 		assertEquals(1, l2Count);
+	}
+
+	@Test(expected = Test.None.class)
+	public void multipleWalletsTest()
+	{
+		// Wallet creation, loading and unloading tests
+		String walletName1 = UUID.randomUUID().toString();
+		String walletName2 = UUID.randomUUID().toString();
+		String walletName3 = UUID.randomUUID().toString();
+
+		Set<String> loaded = client.listWallets();
+		Set<String> files = client.listWalletDir();
+
+		String[] names = new String[]{walletName1, walletName2, walletName3};
+		for (String name : names) {
+			assertFalse(loaded.contains(name));
+			assertFalse(files.contains(name));
+		}
+
+		client.createWallet(walletName1);
+		client.createWallet(walletName2);
+		client.createWallet(walletName3);
+
+		loaded = client.listWallets();
+		files = client.listWalletDir();
+
+		for (String name : names) {
+			assertTrue(loaded.contains(name));
+			assertTrue(files.contains(name));
+		}
+
+		client.unloadWallet(walletName2);
+		loaded = client.listWallets();
+		files = client.listWalletDir();
+
+		assertFalse(loaded.contains(walletName2));
+		assertTrue(files.contains(walletName2));
+		assertTrue(loaded.contains(walletName1));
+		assertTrue(files.contains(walletName1));
+		assertTrue(loaded.contains(walletName3));
+		assertTrue(files.contains(walletName3));
+
+		client.loadWallet(walletName2);
+		loaded = client.listWallets();
+		files = client.listWalletDir();
+
+		for (String name : names) {
+			assertTrue(loaded.contains(name));
+			assertTrue(files.contains(name));
+		}
+
+		// Transaction tests
+		BitcoindRpcClient wallet1 = client.forWallet(walletName1);
+		BitcoindRpcClient wallet2 = client.forWallet(walletName2);
+		BitcoindRpcClient wallet3 = client.forWallet(walletName3); // wallet 3 is used for mining and to fund wallet 1 & 2
+
+		client.generateToAddress(120, wallet3.getNewAddress());
+		LOGGER.info(walletName3 + " balance: " + wallet3.getBalance().toPlainString());
+
+		wallet3.sendToAddress(wallet1.getNewAddress(), BigDecimal.valueOf(10));
+		client.generateToAddress(10, wallet3.getNewAddress());
+
+
+		assertEquals(0, wallet2.getBalance().intValue());
+		assertEquals(10, wallet1.getBalance().intValue());
+
+		String w2Address = wallet2.getNewAddress();
+		wallet1.sendToAddress(w2Address, BigDecimal.valueOf(1));
+		client.generateToAddress(10, wallet3.getNewAddress());
+
+		// wallet1 balance reduced by 1, wallet2 balance increased by 1
+		assertEquals(9, Math.round(wallet1.getBalance().floatValue()));
+		assertEquals(1, Math.round(wallet2.getBalance().floatValue()));
+
+		wallet1.sendToAddress(w2Address, BigDecimal.valueOf(2));
+		client.generateToAddress(10, wallet3.getNewAddress());
+
+		// wallet1 balance reduced by 2, wallet2 balance increased by 2
+		assertEquals(7, Math.round(wallet1.getBalance().floatValue()));
+		assertEquals(3, Math.round(wallet2.getBalance().floatValue()));
+
+		wallet2.sendToAddress(wallet1.getNewAddress(), BigDecimal.valueOf(1));
+		client.generateToAddress(10, wallet3.getNewAddress());
+
+		// wallet1 balance increased by 1, wallet2 balance decreased by 1
+		assertEquals(8, Math.round(wallet1.getBalance().floatValue()));
+		assertEquals(2, Math.round(wallet2.getBalance().floatValue()));
+	}
+
+	@Test(expected = GenericRpcException.class)
+	public void expectExceptionForNonExistentWallet()
+	{
+		client.forWallet(UUID.randomUUID().toString()).getBalance();
 	}
 
 	@Test(expected = Test.None.class) // no exception expected

@@ -32,7 +32,7 @@ public class BitcoinRPCError {
 
     @SuppressWarnings({ "rawtypes" })
     public BitcoinRPCError(Map errorResponse) {
-        Map error = (Map)errorResponse.get("error");
+        Map error = errorResponse.containsKey("error") ? (Map)errorResponse.get("error") : errorResponse; // Avoid nullptr exception
         Number n = (Number) error.get("code");
         this.code    = n != null ? n.intValue() : 0;
         this.message = (String) error.get("message");

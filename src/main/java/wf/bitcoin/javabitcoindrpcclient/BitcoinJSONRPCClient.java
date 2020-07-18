@@ -35,17 +35,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -410,6 +400,58 @@ public class BitcoinJSONRPCClient implements BitcoindRpcClient {
     } catch (IOException ex) {
       throw new BitcoinRPCException(method, batchParams.stream()
               .map(param->Arrays.deepToString(param.params)).collect(Collectors.joining()), ex);
+    }
+  }
+
+  @Override
+  public void createWallet(String walletFilename)
+  {
+    query("createwallet", walletFilename);
+  }
+
+  @Override
+  public void loadWallet(String walletFilename) throws GenericRpcException
+  {
+    query("loadwallet", walletFilename);
+  }
+
+  @Override
+  public void unloadWallet(String walletFilename) throws GenericRpcException
+  {
+    query("unloadwallet", walletFilename);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Set<String> listWallets() throws GenericRpcException
+  {
+    return new HashSet<>((Collection<String>)query("listwallets"));
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Set<String> listWalletDir() throws GenericRpcException
+  {
+    final List<Map<String, ?>> list = (List<Map<String, ?>>) ((Map<String,?>)query("listwalletdir")).get("wallets");
+    final Set<String> wallets = new HashSet<>(list.size());
+    for (Map<String, ?> map : list) {
+      wallets.add((String)map.get("name"));
+    }
+    return wallets;
+  }
+
+  @Override
+  public BitcoindRpcClient forWallet(String walletFilename)
+  {
+    if (walletFilename == null ) {
+      throw new NullPointerException("provided wallet filename is null");
+    }
+
+    try {
+      return new BitcoinJSONRPCClient(new URI(rpcURL.getProtocol(), rpcURL.getUserInfo(), rpcURL.getHost(),
+              rpcURL.getPort(), "/wallet/" + walletFilename, rpcURL.getQuery(), null).toURL());
+    } catch (MalformedURLException | URISyntaxException e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -1260,7 +1302,7 @@ public class BitcoinJSONRPCClient implements BitcoindRpcClient {
 	   ScanObject scanObj = new ScanObject("combo(" + pubkey  + ")", range);
 	    return scanTxOutSet(Arrays.asList(scanObj));
 	  }
-	 
+
   @SuppressWarnings("serial")
   private class AddressBalanceWrapper extends MapWrapper implements AddressBalance, Serializable
   {
