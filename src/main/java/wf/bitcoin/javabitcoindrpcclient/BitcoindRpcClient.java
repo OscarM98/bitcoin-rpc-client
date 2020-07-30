@@ -1290,6 +1290,21 @@ public interface BitcoindRpcClient {
   */
  String sendToAddress(String toAddress, BigDecimal amount, String comment, String commentTo) throws GenericRpcException;
 
+  /**
+   * The sendtoaddress RPC spends an amount to a given address.
+   *
+   * @param toAddress A P2PKH or P2SH address to which the bitcoins should be sent
+   * @param amount The amount to spent in bitcoins
+   * @param comment A locally-stored (not broadcast) comment assigned to this transaction.
+   * @param commentTo A locally-stored (not broadcast) comment assigned to this transaction
+   * @param subtractFeeFromAmount Whether the fee will be deducted from the amount being sent.
+   *
+   * @return The TXID of the sent transaction, encoded as hex in RPC byte order
+   *
+   * @see <a href="https://bitcoin.org/en/developer-reference#sendtoaddress">sendtoaddress</a>
+   */
+  String sendToAddress(String toAddress, BigDecimal amount, String comment, String commentTo, boolean subtractFeeFromAmount) throws GenericRpcException;
+
  /**
   * The settxfee RPC sets the transaction fee per kilobyte paid by transactions created by this wallet.
   * 
